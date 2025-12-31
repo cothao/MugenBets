@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="Mugen-Bets/Mugen-Bets.vcxproj" Id="8caa14a4-12dd-4086-a949-eaf978347b38" />
+</Solution>
