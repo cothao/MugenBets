@@ -2,6 +2,7 @@
 #include "mugenBattleManager.h"
 #include <memory>
 #include <filesystem>
+#include <random>
 
 namespace fs = std::filesystem;
 using characterPointer = std::shared_ptr<Character>;
@@ -32,8 +33,16 @@ void StartBattle()
 
 	GetCharacters();
 
-	characters.push_back(characterPointer(new Character("Old_Foxy", "1")));
-	characters.push_back(characterPointer(new Character("MK2_KINTARO", "1")));
+	std::random_device dev;
+	std::mt19937 rng(dev());
+	std::uniform_int_distribution<std::mt19937::result_type> dist(0, availableCharacters.size());
+
+	for (int characterIndex = 0; characterIndex < 2; characterIndex++)
+	{
+		
+		characters.push_back(characterPointer(new Character(availableCharacters[dist(rng)], "1")));
+	
+	}
 
 	std::string startFlag = "mugen.exe";
 	startFlag += " -p1 ";
