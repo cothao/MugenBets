@@ -5,12 +5,22 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <thread>
+#include <chrono>
 #include "mugenBattleManager.h"
+
 
 int main()
 {
-	MugenBattleManager::StartBattle();
-    MugenBattleManager::WaitForBattleEnd();
-	MugenBattleManager::GetBattleResult();
+	while (true)
+	{
+		MugenBattleManager::StartBattle();
+		MugenBattleManager::WaitForBattleEnd();
+		MugenBattleManager::GetBattleResult();
+
+		std::chrono::duration<double, std::milli> time{ 10000 };
+		std::this_thread::sleep_for(time);
+
+	}
 	return 0;
 }

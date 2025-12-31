@@ -31,9 +31,12 @@ void MugenBattleManager::StartBattle()
 
 	SetCurrentDirectoryA("C:/Users/colli/source/repos/Mugen-Bets/Mugen-Bets/mugen-1.1b1");
 
-	GetCharacters();
+	if (availableCharacters.empty()) GetCharacters();
 
 	// Eventually we want to move these lines to their own separate function.. but not now
+
+	characters = {};
+
 	std::random_device dev;
 	std::mt19937 rng(dev());
 	std::uniform_int_distribution<std::mt19937::result_type> dist(0, availableCharacters.size());
@@ -93,6 +96,7 @@ void MugenBattleManager::GetCharacters()
 	std::string path = "C:/Users/colli/source/repos/Mugen-Bets/Mugen-Bets/mugen-1.1b1/chars/";
 	for (const auto& characterDirectory : fs::directory_iterator(path))
 	{
+
 		for (const auto& directoryContents : fs::directory_iterator(characterDirectory.path()))
 		{
 
@@ -134,5 +138,7 @@ void MugenBattleManager::GetBattleResult()
 
 	std::cout << matchResult[2] << '\n';
 	std::cout << matchResult[3] << '\n';
+
+	std::cout << "MATCH RESULT: " << characters[0]->characterName << " " << matchResult[2] << " | " << characters[1]->characterName << " " << matchResult[3] << '\n';
 
 }
