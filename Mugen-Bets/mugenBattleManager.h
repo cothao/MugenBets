@@ -8,11 +8,17 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <map>
+#include <memory>
+#include "character.h"
 namespace MugenBattleManager
 {
 
 	void StartBattle();
 	void WaitForBattleEnd();
+	void GetCharacters();
+	static std::vector<std::shared_ptr<Character>> characters;
+	static std::vector <std::string> availableCharacters;
 
 }
 
