@@ -3,8 +3,8 @@
 #include <memory>
 #include <filesystem>
 #include <random>
+#include <set>
 #include "helpers.h"
-
 namespace fs = std::filesystem;
 using characterPointer = std::shared_ptr<Character>;
 
@@ -12,6 +12,7 @@ namespace MugenBattleManager
 {
 	STARTUPINFOA si{sizeof(si)};
 	PROCESS_INFORMATION pi1{}, pi2{};
+	std::string startFlag{ "" };
 };
 	/*
 	std::map <std::string, std::string> startFlags =
@@ -33,35 +34,9 @@ void MugenBattleManager::StartBattle()
 
 	if (availableCharacters.empty()) GetCharacters();
 
-	// Eventually we want to move these lines to their own separate function.. but not now
-
-	characters = {};
-
-	std::random_device dev;
-	std::mt19937 rng(dev());
-	std::uniform_int_distribution<std::mt19937::result_type> dist(0, availableCharacters.size());
-
-	for (int characterIndex = 0; characterIndex < 2; characterIndex++)
-	{
-		
-		characters.push_back(characterPointer(new Character(availableCharacters[dist(rng)], "1")));
+	SetCharactersForBattle();
 	
-	}
-
-	std::string startFlag = "mugen.exe";
-	startFlag += " -p1 ";
-	startFlag += characters[0]->characterName;
-	startFlag += " -p1.color ";
-	startFlag += characters[0]->colorPalette;
-	startFlag += " -p1.ai 9 ";
-	startFlag += " -p2 ";
-	startFlag += characters[1]->characterName;
-	startFlag += " -p2.color ";
-	startFlag += characters[1]->colorPalette;
-	startFlag += " -p2.ai 9 ";
-	startFlag += "-rounds 1";
-
-	std::cout << startFlag << '\n';
+	SetStartFlag();
 
 	CreateProcessA(
 	NULL,
@@ -100,23 +75,22 @@ void MugenBattleManager::GetCharacters()
 		for (const auto& directoryContents : fs::directory_iterator(characterDirectory.path()))
 		{
 
-			std::string filePath = fs::absolute(directoryContents.path()).string();
+			fs::path filePath(directoryContents.path());
 
-			if (filePath.find(".def") != std::string::npos && 
-				filePath.find("ending") == std::string::npos && 
-				filePath.find("intro") == std::string::npos && 
-				filePath.find("CONFIG") == std::string::npos)
+			if (filePath.extension() == ".def" &&
+				filePath.stem().string() != "ending" &&
+				filePath.stem().string() != "intro" &&
+				filePath.stem().string() != "CONFIG")
 			{
-				size_t pathIndex = filePath.find_last_of("\\");
-				std::string fileName(filePath.substr(pathIndex + 1, filePath.find(".def")));
-				std::string finalCharacterName = fileName.substr(0, fileName.find_last_of("."));
-				std::cout << finalCharacterName << '\n';
-				availableCharacters.push_back(finalCharacterName);
+				
+				std::string characterName = filePath.stem().string();
+				availableCharacters.push_back(characterName);
 
 			}
 		}
 
 	}
+
 
 }
 
@@ -139,6 +113,103 @@ void MugenBattleManager::GetBattleResult()
 	std::cout << matchResult[2] << '\n';
 	std::cout << matchResult[3] << '\n';
 
-	std::cout << "MATCH RESULT: " << characters[0]->characterName << " " << matchResult[2] << " | " << characters[1]->characterName << " " << matchResult[3] << '\n';
+	std::cout << "MATCH RESULT: " << charactersForBattle[0]->characterName << " " << matchResult[2] << " | " << charactersForBattle[1]->characterName << " " << matchResult[3] << '\n';
+
+}
+
+void MugenBattleManager::SetStartFlag()
+{
+
+	switch (charactersForBattle.size())
+	{
+
+
+	case 2:
+		startFlag = "mugen.exe";
+		startFlag += " -p1 ";
+		startFlag += charactersForBattle[0]->characterName;
+		startFlag += " -p1.color ";
+		startFlag += charactersForBattle[0]->colorPalette;
+		startFlag += " -p1.ai 9 ";
+		startFlag += " -p2 ";
+		startFlag += charactersForBattle[1]->characterName;
+		startFlag += " -p2.color ";
+		startFlag += charactersForBattle[1]->colorPalette;
+		startFlag += " -p2.ai 9 ";
+		startFlag += "-rounds 1";
+		std::cout << startFlag << '\n';
+		break;
+	case 3:
+		startFlag = "mugen.exe";
+		startFlag += " -p1 ";
+		startFlag += charactersForBattle[0]->characterName;
+		startFlag += " -p1.color ";
+		startFlag += charactersForBattle[0]->colorPalette;
+		startFlag += " -p1.ai 9 ";
+		startFlag += " -p2 ";
+		startFlag += charactersForBattle[1]->characterName;
+		startFlag += " -p2.color ";
+		startFlag += charactersForBattle[1]->colorPalette;
+		startFlag += " -p2.ai 9 ";
+		startFlag += " -p3 ";
+		startFlag += charactersForBattle[2]->characterName;
+		startFlag += " -p3.color ";
+		startFlag += charactersForBattle[2]->colorPalette;
+		startFlag += " -p3.ai 9 ";
+		startFlag += "-rounds 1";
+		std::cout << startFlag << '\n';
+		break;
+	case 4:
+		startFlag = "mugen.exe";
+		startFlag += " -p1 ";
+		startFlag += charactersForBattle[0]->characterName;
+		startFlag += " -p1.color ";
+		startFlag += charactersForBattle[0]->colorPalette;
+		startFlag += " -p1.ai 9 ";
+		startFlag += " -p2 ";
+		startFlag += charactersForBattle[1]->characterName;
+		startFlag += " -p2.color ";
+		startFlag += charactersForBattle[1]->colorPalette;
+		startFlag += " -p2.ai 9 ";
+		startFlag += " -p3 ";
+		startFlag += charactersForBattle[2]->characterName;
+		startFlag += " -p3.color ";
+		startFlag += charactersForBattle[2]->colorPalette;
+		startFlag += " -p3.ai 9 ";
+		startFlag += " -p4 ";
+		startFlag += charactersForBattle[3]->characterName;
+		startFlag += " -p4.color ";
+		startFlag += charactersForBattle[3]->colorPalette;
+		startFlag += " -p4.ai 9 ";
+		startFlag += "-rounds 1";
+		std::cout << startFlag << '\n';
+		break;
+	}
+
+}
+
+void MugenBattleManager::SetCharactersForBattle()
+{
+	
+	charactersForBattle = {};
+
+	std::random_device dev;
+	std::mt19937 rng(dev());
+	std::uniform_int_distribution<std::mt19937::result_type> dist(0, availableCharacters.size() - 1);
+	std::uniform_int_distribution<std::mt19937::result_type> sizeDist(2, 4);
+	std::set<int> randomCharacterIndexes{};
+	uint32_t characterTeamSizes = sizeDist(rng);
+
+	while (randomCharacterIndexes.size() < characterTeamSizes)
+	{
+		uint32_t randomNumber = dist(rng);
+		randomCharacterIndexes.insert(randomNumber);
+
+		if (randomCharacterIndexes.find(randomNumber) != randomCharacterIndexes.end())
+		{
+			charactersForBattle.push_back(characterPointer(new Character(availableCharacters.at(randomNumber), "1")));
+		}
+
+	}
 
 }

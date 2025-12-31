@@ -19,11 +19,14 @@ namespace MugenBattleManager
 	void WaitForBattleEnd();
 	void GetCharacters();
 	void GetBattleResult();
-	static std::vector<std::shared_ptr<Character>> characters;
+	void SetStartFlag();
+	void SetCharactersForBattle();
+	static std::vector<std::shared_ptr<Character>> charactersForBattle;
 	static std::vector <std::string> availableCharacters;
 	extern STARTUPINFOA si;
 	extern PROCESS_INFORMATION pi1;
 	extern PROCESS_INFORMATION pi2;
+	extern std::string startFlag;
 
 }
 

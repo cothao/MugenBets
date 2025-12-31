@@ -1,9 +1,7 @@
-﻿  main.cpp
-  mugenBattleManager.cpp
-C:\Users\colli\source\repos\Mugen-Bets\Mugen-Bets\mugenBattleManager.cpp(42,91): warning C4267: 'argument': conversion from 'size_t' to '_Ty', possible loss of data
-C:\Users\colli\source\repos\Mugen-Bets\Mugen-Bets\mugenBattleManager.cpp(42,91): warning C4267:         with
-C:\Users\colli\source\repos\Mugen-Bets\Mugen-Bets\mugenBattleManager.cpp(42,91): warning C4267:         [
-C:\Users\colli\source\repos\Mugen-Bets\Mugen-Bets\mugenBattleManager.cpp(42,91): warning C4267:             _Ty=unsigned int
-C:\Users\colli\source\repos\Mugen-Bets\Mugen-Bets\mugenBattleManager.cpp(42,91): warning C4267:         ]
-  Generating Code...
+﻿  mugenBattleManager.cpp
+C:\Users\colli\source\repos\Mugen-Bets\Mugen-Bets\mugenBattleManager.cpp(198,94): warning C4267: 'argument': conversion from 'size_t' to '_Ty', possible loss of data
+C:\Users\colli\source\repos\Mugen-Bets\Mugen-Bets\mugenBattleManager.cpp(198,94): warning C4267:         with
+C:\Users\colli\source\repos\Mugen-Bets\Mugen-Bets\mugenBattleManager.cpp(198,94): warning C4267:         [
+C:\Users\colli\source\repos\Mugen-Bets\Mugen-Bets\mugenBattleManager.cpp(198,94): warning C4267:             _Ty=unsigned int
+C:\Users\colli\source\repos\Mugen-Bets\Mugen-Bets\mugenBattleManager.cpp(198,94): warning C4267:         ]
   Mugen-Bets.vcxproj -> C:\Users\colli\source\repos\Mugen-Bets\x64\Debug\Mugen-Bets.exe
