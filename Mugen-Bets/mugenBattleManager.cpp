@@ -3,29 +3,29 @@
 #include <memory>
 #include <filesystem>
 #include <random>
+#include "helpers.h"
 
 namespace fs = std::filesystem;
 using characterPointer = std::shared_ptr<Character>;
 
 namespace MugenBattleManager
 {
-
-inline STARTUPINFOA si{ sizeof(si) };
-inline PROCESS_INFORMATION pi1{}, pi2{};
-
-/*
-std::map <std::string, std::string> startFlags =
-{
-	{"-p1", nullptr},
-	{"-p2", nullptr},
-	{"-p3", nullptr},
-	{"-p4", nullptr},
-	{"-rounds", nullptr},
-	{"-stage", nullptr},
+	STARTUPINFOA si{sizeof(si)};
+	PROCESS_INFORMATION pi1{}, pi2{};
 };
-*/
-
-void StartBattle()
+	/*
+	std::map <std::string, std::string> startFlags =
+	{
+		{"-p1", nullptr},
+		{"-p2", nullptr},
+		{"-p3", nullptr},
+		{"-p4", nullptr},
+		{"-rounds", nullptr},
+		{"-stage", nullptr},
+	};
+	*/
+	
+void MugenBattleManager::StartBattle()
 {
 
 
@@ -33,6 +33,7 @@ void StartBattle()
 
 	GetCharacters();
 
+	// Eventually we want to move these lines to their own separate function.. but not now
 	std::random_device dev;
 	std::mt19937 rng(dev());
 	std::uniform_int_distribution<std::mt19937::result_type> dist(0, availableCharacters.size());
@@ -73,19 +74,20 @@ void StartBattle()
 	&si, &pi1
 	);
 	
+
 }
-	
-void WaitForBattleEnd()
+		
+void MugenBattleManager::WaitForBattleEnd()
 {
-	
+		
 	WaitForSingleObject(pi1.hProcess, INFINITE);
-	
+		
 	CloseHandle(pi1.hProcess);
 	CloseHandle(pi1.hThread);
-
+	
 }
-
-void GetCharacters()
+	
+void MugenBattleManager::GetCharacters()
 {
 	
 	std::string path = "C:/Users/colli/source/repos/Mugen-Bets/Mugen-Bets/mugen-1.1b1/chars/";
@@ -104,7 +106,7 @@ void GetCharacters()
 				size_t pathIndex = filePath.find_last_of("\\");
 				std::string fileName(filePath.substr(pathIndex + 1, filePath.find(".def")));
 				std::string finalCharacterName = fileName.substr(0, fileName.find_last_of("."));
-				
+				std::cout << finalCharacterName << '\n';
 				availableCharacters.push_back(finalCharacterName);
 
 			}
@@ -113,5 +115,24 @@ void GetCharacters()
 	}
 
 }
+
+void MugenBattleManager::GetBattleResult()
+{
+
+	std::vector<std::string> lines{};
+
+	std::ifstream file("MugenWatcher.log");
+
+	std::string line;
+
+	while (std::getline(file, line))
+	{
+		lines.push_back(line);
+	}
+
+	std::vector<std::string> matchResult = splitString(lines.back(), ',');
+
+	std::cout << matchResult[2] << '\n';
+	std::cout << matchResult[3] << '\n';
 
 }
