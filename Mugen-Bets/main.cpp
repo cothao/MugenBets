@@ -9,14 +9,14 @@
 #include <chrono>
 #include "mugenBattleManager.h"
 
-
 int main()
 {
 	while (true)
 	{
 		MugenBattleManager::StartBattle();
 		MugenBattleManager::WaitForBattleEnd();
-		MugenBattleManager::GetBattleResult();
+		MugenBattleManager::SetMatchResult();
+		MugenBattleManager::SetCharactersStatsJSON();
 
 		std::chrono::duration<double, std::milli> time{ 10000 };
 		std::this_thread::sleep_for(time);

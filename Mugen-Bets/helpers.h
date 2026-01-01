@@ -21,5 +21,4 @@ std::vector<std::string> splitString(const std::string &s, char delim) {
     return elems;
 }
 
-
 #endif // !HELPERS_H

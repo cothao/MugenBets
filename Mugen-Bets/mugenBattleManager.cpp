@@ -4,35 +4,33 @@
 #include <filesystem>
 #include <random>
 #include <set>
+#include <nlohmann/json.hpp>
 #include "helpers.h"
-namespace fs = std::filesystem;
+#include "httprequests.h"
+
+using json = nlohmann::json;
 using characterPointer = std::shared_ptr<Character>;
+
+namespace fs = std::filesystem;
 
 namespace MugenBattleManager
 {
 	STARTUPINFOA si{sizeof(si)};
 	PROCESS_INFORMATION pi1{}, pi2{};
+	MATCH_TYPE matchType{TWO_VERSUS_ONE};
 	std::string startFlag{ "" };
-};
-	/*
-	std::map <std::string, std::string> startFlags =
-	{
-		{"-p1", nullptr},
-		{"-p2", nullptr},
-		{"-p3", nullptr},
-		{"-p4", nullptr},
-		{"-rounds", nullptr},
-		{"-stage", nullptr},
+	std::map<std::string, std::map<std::string, std::string>> matchResult{
+		{"Winners", {}},
+		{"Losers", {}},
 	};
-	*/
+};
 	
 void MugenBattleManager::StartBattle()
 {
 
-
 	SetCurrentDirectoryA("C:/Users/colli/source/repos/Mugen-Bets/Mugen-Bets/mugen-1.1b1");
 
-	if (availableCharacters.empty()) GetCharacters();
+	if (availableCharacters.empty()) PopulateAvailableCharacters();
 
 	SetCharactersForBattle();
 	
@@ -65,7 +63,7 @@ void MugenBattleManager::WaitForBattleEnd()
 	
 }
 	
-void MugenBattleManager::GetCharacters()
+void MugenBattleManager::PopulateAvailableCharacters()
 {
 	
 	std::string path = "C:/Users/colli/source/repos/Mugen-Bets/Mugen-Bets/mugen-1.1b1/chars/";
@@ -94,7 +92,7 @@ void MugenBattleManager::GetCharacters()
 
 }
 
-void MugenBattleManager::GetBattleResult()
+std::vector<std::string> MugenBattleManager::GetBattleResult()
 {
 
 	std::vector<std::string> lines{};
@@ -108,12 +106,7 @@ void MugenBattleManager::GetBattleResult()
 		lines.push_back(line);
 	}
 
-	std::vector<std::string> matchResult = splitString(lines.back(), ',');
-
-	std::cout << matchResult[2] << '\n';
-	std::cout << matchResult[3] << '\n';
-
-	std::cout << "MATCH RESULT: " << charactersForBattle[0]->characterName << " " << matchResult[2] << " | " << charactersForBattle[1]->characterName << " " << matchResult[3] << '\n';
+	return lines;
 
 }
 
@@ -199,17 +192,291 @@ void MugenBattleManager::SetCharactersForBattle()
 	std::uniform_int_distribution<std::mt19937::result_type> sizeDist(2, 4);
 	std::set<int> randomCharacterIndexes{};
 	uint32_t characterTeamSizes = sizeDist(rng);
+	uint32_t previousSetSize = randomCharacterIndexes.size();
 
-	while (randomCharacterIndexes.size() < characterTeamSizes)
+	while (randomCharacterIndexes.size() < matchType)
 	{
 		uint32_t randomNumber = dist(rng);
 		randomCharacterIndexes.insert(randomNumber);
 
-		if (randomCharacterIndexes.find(randomNumber) != randomCharacterIndexes.end())
+		if (randomCharacterIndexes.size() != previousSetSize) // ensuring we add a unique character and not a dupe
 		{
 			charactersForBattle.push_back(characterPointer(new Character(availableCharacters.at(randomNumber), "1")));
+			previousSetSize = randomCharacterIndexes.size();
 		}
 
+
+	}
+
+}
+
+void MugenBattleManager::SetCharactersStatsJSON()
+{
+
+	std::ifstream f("characterStats.json");
+	json characterData = json::parse(f);
+	json jsonData;
+
+	for (std::map<std::string, std::string>::iterator character = matchResult["Winners"].begin(); character != matchResult["Winners"].end(); ++character)
+	{
+		
+
+		std::string characterName = character->first;
+		std::cout << "Character: " << characterName << '\n';
+
+		if (!characterData["characters"].contains(characterName))
+		{
+
+			std::cout << characterName << '\n';
+			std::cout << "Score: " << std::stoi(matchResult["Winners"][characterName]) << '\n';
+			int score = std::stoi(matchResult["Winners"][characterName]);
+
+			json playerMatchData =
+			{
+				{"CharacterName", characterName},
+				{"Wins", score},
+				{"Losses", 0},
+				{"WinRate", 0.0},
+				{"Matches", 1},
+				{"Tier", "N/A"}
+			};
+
+			characterData["characters"][characterName] = playerMatchData;
+			jsonData[characterName] = playerMatchData;
+
+		}
+		else
+		{
+			std::cout << "Score: " << std::stoi(matchResult["Winners"][characterName])<< '\n';
+			int score = std::stoi(matchResult["Winners"][characterName]);
+	
+			int updatedWins = characterData["characters"][characterName]["Wins"] + score;
+			int updatedLosses = characterData["characters"][characterName]["Losses"];
+			int updatedMatches = characterData["characters"][characterName]["Matches"] + 1;
+			double updatedWinRate = updatedMatches > 10 ? (double)updatedWins/(double)updatedMatches : 0;
+			std::string tier = GetTier(updatedWinRate);
+
+			std::cout << "Updated Win Rate for " << characterName << ": " << updatedWinRate << '\n';
+			
+			json currentCharacterStats =
+			{
+				{"CharacterName", characterName},
+				{"Wins", updatedWins},
+				{"Losses", updatedLosses},
+				{"WinRate", updatedWinRate},
+				{"Matches", updatedMatches},
+				{"Tier", tier}
+			};
+
+			characterData["characters"][characterName].clear();
+			jsonData[characterName] = currentCharacterStats;
+			characterData["characters"][characterName] = currentCharacterStats;
+		}
+
+	}
+	
+	for (std::map<std::string, std::string>::iterator character = matchResult["Losers"].begin(); character != matchResult["Losers"].end(); ++character)
+	{
+
+		std::string characterName = character->first;
+
+		if (!characterData["characters"].contains(characterName))
+		{
+			
+
+			std::cout << characterName << '\n';
+
+			std::cout << "Score: " << std::stoi(matchResult["Losers"][characterName]) << '\n';
+			int score = std::stoi(matchResult["Losers"][characterName]);
+
+			json playerMatchData =
+			{
+				{"CharacterName", characterName},
+				{"Wins", 0},
+				{"Losses", score},
+				{"WinRate", 0.0},
+				{"Matches", 1},
+				{"Tier", "N/A"}
+			};
+
+			jsonData[characterName] = playerMatchData;
+			characterData["characters"][characterName] = playerMatchData;
+	
+		}
+		else
+		{
+			std::cout << "Score: " << std::stoi(matchResult["Losers"][characterName]) << '\n';
+			int score = std::stoi(matchResult["Losers"][characterName]);
+
+			int updatedWins = characterData["characters"][characterName]["Wins"];
+			int updatedLosses = characterData["characters"][characterName]["Losses"] + score;
+			int updatedMatches = characterData["characters"][characterName]["Matches"] + 1;
+			double updatedWinRate = updatedMatches > 10 ? (double)updatedWins/(double)updatedMatches : 0;
+			std::string tier = GetTier(updatedWinRate);
+
+			json currentCharacterStats =
+			{
+				{"CharacterName", characterName},
+				{"Wins", updatedWins},
+				{"Losses", updatedLosses},
+				{"WinRate", updatedWinRate},
+				{"Matches", updatedMatches},
+				{"Tier", tier}
+			};
+
+			characterData["characters"][characterName].clear();
+			jsonData[characterName] = currentCharacterStats;
+			characterData["characters"][characterName] = currentCharacterStats;
+		}
+	}
+
+	const wchar_t* requestUrl = L"8xkovn5om1.execute-api.us-east-1.amazonaws.com";
+	const wchar_t* requestType = L"GET";
+
+	std::cout << jsonData.dump() << '\n';
+	HTTP::fetch(requestUrl, requestType, jsonData.dump());
+	std::ofstream out("characterStats.json");
+	out << characterData.dump();
+
+
+}
+
+void MugenBattleManager::SetMatchResult()
+{
+	matchResult["Winners"].clear();
+	matchResult["Losers"].clear();
+	std::vector<std::string> logLines = GetBattleResult();
+
+	std::vector<std::string> matchResultInfo = splitString(logLines.back(), ',');
+	
+	switch (matchType)
+	{
+	case ONE_VERSUS_ONE:
+
+		if (matchResultInfo[2] == "1")
+		{
+			matchResult["Winners"][charactersForBattle[0]->characterName] = "1";
+
+			matchResult["Losers"][charactersForBattle[1]->characterName] = "1";
+		}
+			
+		break;
+	case TWO_VERSUS_ONE:
+
+		if (matchResultInfo[2] == "1")
+		{
+			matchResult["Winners"][charactersForBattle[0]->characterName] = "1";
+			matchResult["Winners"][charactersForBattle[2]->characterName] = "1";
+			
+			matchResult["Losers"][charactersForBattle[1]->characterName] = "1";
+		}
+		else
+		{
+			matchResult["Winners"][charactersForBattle[1]->characterName] = "1";
+
+			matchResult["Losers"][charactersForBattle[0]->characterName] = "1";
+			matchResult["Losers"][charactersForBattle[2]->characterName] = "1";
+		}
+		break;
+
+	case TWO_VERSUS_TWO:
+
+		if (matchResultInfo[2] == "1")
+		{
+			matchResult["Winners"][charactersForBattle[0]->characterName] = "1";
+			matchResult["Winners"][charactersForBattle[2]->characterName] = "1";
+
+			matchResult["Losers"][charactersForBattle[1]->characterName] = "1";
+			matchResult["Losers"][charactersForBattle[3]->characterName] = "1";
+		}
+		else
+		{
+			matchResult["Winners"][charactersForBattle[1]->characterName] = "1";
+			matchResult["Winners"][charactersForBattle[3]->characterName] = "1";
+			
+			matchResult["Losers"][charactersForBattle[0]->characterName] = "1";
+			matchResult["Losers"][charactersForBattle[2]->characterName] = "1";
+		}
+		break;
+	}
+
+}
+
+std::string MugenBattleManager::GetTier(double winRate)
+{
+
+	winRate = winRate * 100;
+
+	if (winRate > 96)
+	{
+		return "SSS";
+	}
+	else if (winRate > 93)
+	{
+		return "SS";
+	}
+	else if (winRate > 90)
+	{
+		return "S";
+	}
+	else if (winRate > 86)
+	{
+		return "A+";
+	}
+	else if (winRate > 83)
+	{
+		return "A";
+	}
+	else if (winRate > 80)
+	{
+		return "A-";
+	}
+	else if (winRate > 76)
+	{
+		return "B+";
+	}
+	else if (winRate > 73)
+	{
+		return "B";
+	}
+
+	else if (winRate > 70)
+	{
+		return "B-";
+	}
+
+	else if (winRate > 66)
+	{
+		return "C+";
+	}
+
+	else if (winRate > 63)
+	{
+		return "C";
+	}
+
+	else if (winRate > 60)
+	{
+		return "C-";
+	}
+
+	else if (winRate > 56)
+	{
+		return "D+";
+	}
+
+	else if (winRate > 53)
+	{
+		return "D";
+	}
+
+	else if (winRate > 50)
+	{
+		return "D-";
+	}
+	else
+	{
+		return "F";
 	}
 
 }
